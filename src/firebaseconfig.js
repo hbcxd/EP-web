@@ -2,12 +2,13 @@ import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "TU_API_KEY",
-  authDomain: "TU_AUTH_DOMAIN",
-  projectId: "TU_PROJECT_ID",
-  storageBucket: "TU_STORAGE_BUCKET",
-  messagingSenderId: "TU_MESSAGING_SENDER_ID",
-  appId: "TU_APP_ID"
+  apiKey: "AIzaSyAP79oeDD4d6stMPXwMToQhQQTEneb6iww",
+  authDomain: "base-de-datos-maestra-5a5a7.firebaseapp.com",
+  projectId: "base-de-datos-maestra-5a5a7",
+  storageBucket: "base-de-datos-maestra-5a5a7.firebasestorage.app",
+  messagingSenderId: "998538522792",
+  appId: "1:998538522792:web:b80a0239fcc749282b929d",
+  measurementId: "G-TTVVXRQR37"
 };
 
 const app = initializeApp(firebaseConfig);
