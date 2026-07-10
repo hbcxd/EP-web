@@ -17,7 +17,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // 2. EL FILTRO MAESTRO: ID único que diferencia esta web de las demás
-const CONFIG_DOCUMENT_ID = "PEGAR_AQUÍ_EL_ID_GENERADO_EN_EL_PANEL";
+const CONFIG_DOCUMENT_ID = "Dov8ARmYu9dtt4sOrZq6";
 
 export default function App() {
   const [appearance, setAppearance] = useState(null);
