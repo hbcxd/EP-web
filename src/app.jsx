@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 // Asegúrate de que la ruta a tu configuración de Firebase sea correcta
-import { db } from './firebaseConfig'; 
+import { db } from './firebaseconfig'; 
 import { doc, onSnapshot } from 'firebase/firestore';
 
 // Pega aquí el ID de la plataforma que vas a probar (por ejemplo, el ID de EP web)
