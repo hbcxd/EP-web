@@ -4,7 +4,7 @@ import { db } from './firebaseConfig';
 import { doc, onSnapshot } from 'firebase/firestore';
 
 // Pega aquí el ID de la plataforma que vas a probar (por ejemplo, el ID de EP web)
-const PLATFORMA_ID = "COLOCA_AQUI_EL_ID_DE_TU_PLATAFORMA"; 
+const PLATFORMA_ID = "Dov8ARmYu9dtt4sOrZq6"; 
 
 export default function App() {
   const [platform, setPlatform] = useState(null);
