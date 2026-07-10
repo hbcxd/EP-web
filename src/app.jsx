@@ -1,216 +1,69 @@
 import React, { useState, useEffect } from 'react';
-import { ProjectProvider, useProjects } from './context/projectcontext';
-import { auth } from './config/firebase'; // Conexión directa con tu Firebase configurado
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, doc, onSnapshot } from 'firebase/firestore';
 
-// Importación de todos tus componentes del panel
-import Sidebar from './components/sidebar';
-import ProjectForm from './components/projectform';
-import AppearanceForm from './components/appearanceform';
-import ProjectManager from './components/projectmanager';
-import Instructions from './components/instructions';
+// 1. CREDENCIALES DE TU BASE DE DATOS MAESTRA
+const firebaseConfig = {
+  apiKey: "AIzaSyAP79oeDD4d6stMPXwMToQhQQTEneb6iww",
+  authDomain: "base-de-datos-maestra-5a5a7.firebaseapp.com",
+  projectId: "base-de-datos-maestra-5a5a7",
+  storageBucket: "base-de-datos-maestra-5a5a7.firebasestorage.app",
+  messagingSenderId: "998538522792",
+  appId: "1:998538522792:web:b80a0239fcc749282b929d",
+  measurementId: "G-TTVVXRQR37"
+};
 
-// ==========================================
-// 1. COMPONENTE DE INICIO DE SESIÓN (LOGIN)
-// ==========================================
-function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+// 2. EL FILTRO MAESTRO: ID único que diferencia esta web de las demás
+const CONFIG_DOCUMENT_ID = "PEGAR_AQUÍ_EL_ID_GENERADO_EN_EL_PANEL";
 
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch (err) {
-      console.error(err);
-      setError('Credenciales incorrectas. Por favor, verifique de nuevo e intente otra vez.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="h-screen w-screen flex items-center justify-center bg-slate-950 text-slate-100 font-sans p-4 relative overflow-hidden">
-      {/* Efectos visuales de fondo */}
-      <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none"></div>
-      <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-emerald-600/10 rounded-full blur-[120px] pointer-events-none"></div>
-
-      <div className="bg-slate-900 border border-slate-800 p-8 rounded-2xl max-w-md w-full shadow-2xl z-10">
-        <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold tracking-tight text-white mb-2">Panel Maestro</h2>
-          <p className="text-xs text-slate-400">Ingrese sus credenciales de administrador para continuar.</p>
-        </div>
-
-        {error && (
-          <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs p-3 rounded-xl mb-4 text-center font-medium">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleLogin} className="space-y-5">
-          <div>
-            <label className="block text-xs font-semibold text-slate-400 mb-2">Correo Electrónico</label>
-            <input 
-              type="email" 
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@ejemplo.com" 
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-blue-500/50 transition" 
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-400 mb-2">Contraseña</label>
-            <input 
-              type="password" 
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••" 
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-blue-500/50 transition" 
-            />
-          </div>
-
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="w-full bg-blue-600 text-white font-medium p-3 rounded-xl hover:bg-blue-500 transition text-sm shadow-lg shadow-blue-600/20 disabled:opacity-50"
-          >
-            {loading ? 'Verificando...' : 'Iniciar Sesión'}
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-// ==========================================
-// 2. CONTENIDO PRINCIPAL (PANEL MAESTRO)
-// ==========================================
-function AppContent() {
-  const { masterSettings } = useProjects();
-  const [view, setView] = useState('config');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  const handleLogout = async () => {
-    if (window.confirm('¿Está seguro de que desea cerrar sesión en el panel?')) {
-      await signOut(auth);
-    }
-  };
-
-  // Inyección de estilos CSS basados en las preferencias de tu base de datos
-  const dynamicStyles = `
-    :root {
-      --b-bg: ${masterSettings.bgColor};
-      --b-surface: ${masterSettings.surfaceColor};
-      --b-primary: ${masterSettings.primaryColor};
-      --b-secondary: ${masterSettings.secondaryColor};
-      --b-text: ${masterSettings.textColor};
-      --b-muted: ${masterSettings.mutedColor};
-      --b-radius: ${masterSettings.borderRadius};
-    }
-    .bg-brand-bg { background-color: var(--b-bg) !important; }
-    .bg-brand-surface { background-color: var(--b-surface) !important; }
-    .text-brand-primary { color: var(--b-primary) !important; }
-    .bg-brand-primary { background-color: var(--b-primary) !important; }
-    .border-brand-primary { border-color: var(--b-primary) !important; }
-    .text-slate-100 { color: var(--b-text) !important; }
-    .text-slate-300 { color: var(--b-text) !important; }
-    .text-slate-400, .text-slate-500 { color: var(--b-muted) !important; }
-    .rounded-xl, .rounded-2xl { border-radius: var(--b-radius) !important; }
-  `;
-
-  const layoutDirection = masterSettings.sidebarPosition === 'right' ? 'flex-row-reverse' : 'flex-row';
-
-  return (
-    <div className={`flex h-screen bg-brand-bg font-sans overflow-hidden text-slate-100 relative ${layoutDirection}`}>
-      
-      <style>{dynamicStyles}</style>
-
-      {/* Menú Lateral Adaptable */}
-      <div className={`fixed inset-y-0 z-50 transform ${isSidebarOpen ? 'translate-x-0' : masterSettings.sidebarPosition === 'right' ? 'translate-x-full' : '-translate-x-full'} lg:relative lg:translate-x-0 transition-transform duration-300 ease-in-out h-full ${masterSettings.sidebarPosition === 'right' ? 'right-0' : 'left-0'}`}>
-        <Sidebar setView={(v) => { setView(v); setIsSidebarOpen(false); }} closeSidebar={() => setIsSidebarOpen(false)} />
-      </div>
-
-      {/* Capa oscura de fondo para menús móviles */}
-      {isSidebarOpen && (
-        <div onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-black/60 z-45 lg:hidden" />
-      )}
-
-      {/* Área de Trabajo de la plataforma */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        
-        {/* Encabezado */}
-        <header className="bg-brand-surface border-b border-slate-800/50 p-4 flex items-center justify-between z-40 shadow-md">
-          <div className="flex items-center gap-3">
-            <button onClick={() => setIsSidebarOpen(true)} className="text-white text-2xl p-1 lg:hidden">☰</button>
-            <h1 className="text-md font-bold text-white tracking-tight hidden lg:block uppercase">{masterSettings.brandName}</h1>
-            <span className="text-xs text-slate-400 hidden lg:block">| {masterSettings.brandSubtitle}</span>
-          </div>
-          
-          {/* Botón de Salida */}
-          <button 
-            onClick={handleLogout}
-            className="bg-slate-950 hover:bg-red-950/30 text-slate-400 hover:text-red-400 border border-slate-800 hover:border-red-900/50 px-3 py-1.5 rounded-xl text-xs font-semibold transition"
-          >
-            Cerrar Sesión ↩
-          </button>
-        </header>
-
-        {/* Carga Dinámica de Vistas */}
-        <div className="flex-1 p-4 md:p-8 overflow-y-auto bg-brand-bg">
-          {view === 'config' && <ProjectForm />}
-          {view === 'appearance' && <AppearanceForm />}
-          {view === 'manage' && <ProjectManager />}
-          {view === 'instructions' && <Instructions />}
-        </div>
-      </div>
-
-    </div>
-  );
-}
-
-// ==========================================
-// 3. ENRUTADOR RAÍZ CON VERIFICACIÓN DE SESIÓN
-// ==========================================
 export default function App() {
-  const [user, setUser] = useState(null);
-  const [initializing, setInitializing] = useState(true);
+  const [appearance, setAppearance] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Revisa limpia y correctamente si hay una sesión activa de Firebase en el navegador
-    const unsubscribeAuth = onAuthStateChanged(auth, (userSnap) => {
-      setUser(userSnap);
-      setInitializing(false);
+    // Escucha únicamente el documento asignado a este proyecto
+    const docRef = doc(db, "plataformas", CONFIG_DOCUMENT_ID);
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setAppearance(docSnap.data().appearance);
+      }
+      setLoading(false);
     });
-
-    return () => unsubscribeAuth();
+    return () => unsubscribe();
   }, []);
 
-  // Pantalla limpia de carga mientras Firebase responde
-  if (initializing) {
+  if (loading) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-slate-950 text-white font-sans">
-        <div className="text-center space-y-2">
-          <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-xs text-slate-500 tracking-wider">Verificando credenciales...</p>
-        </div>
+      <div className="h-screen w-screen flex items-center justify-center bg-slate-950 text-white">
+        <p className="animate-pulse text-xs">Cargando identidad visual...</p>
       </div>
     );
   }
 
-  // Filtro Maestro de Entrada
-  return user ? (
-    <ProjectProvider>
-      <AppContent />
-    </ProjectProvider>
-  ) : (
-    <Login />
+  const dynamicStyles = `
+    :root {
+      --child-bg: ${appearance?.bgColor || '#0f172a'};
+      --child-surface: ${appearance?.surfaceColor || '#1e293b'};
+      --child-primary: ${appearance?.primaryColor || '#3b82f6'};
+      --child-text: ${appearance?.textColor || '#ffffff'};
+    }
+    .custom-bg { background-color: var(--child-bg) !important; }
+    .custom-surface { background-color: var(--child-surface) !important; }
+    .custom-text { color: var(--child-text) !important; }
+    .custom-btn { background-color: var(--child-primary) !important; }
+  `;
+
+  return (
+    <div className="min-h-screen custom-bg custom-text p-6 flex flex-col items-center justify-center">
+      <style>${dynamicStyles}</style>
+      <div className="custom-surface p-8 rounded-2xl max-w-md w-full text-center border border-white/5 shadow-2xl">
+        <h1 className="text-xl font-bold mb-2">Plataforma Sincronizada</h1>
+        <p className="text-xs opacity-70 mb-6">Controlada con el ID: ${CONFIG_DOCUMENT_ID}</p>
+        <button className="custom-btn w-full py-3 rounded-xl font-medium text-white shadow-lg">Estructura Base</button>
+      </div>
+    </div>
   );
 }
