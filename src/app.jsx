@@ -1,69 +1,159 @@
-import React, { useState, useEffect } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, onSnapshot } from 'firebase/firestore';
+import React, { useEffect, useState } from 'react';
+// Asegúrate de que la ruta a tu configuración de Firebase sea correcta
+import { db } from './firebaseConfig'; 
+import { doc, onSnapshot } from 'firebase/firestore';
 
-// 1. CREDENCIALES DE TU BASE DE DATOS MAESTRA
-const firebaseConfig = {
-  apiKey: "AIzaSyAP79oeDD4d6stMPXwMToQhQQTEneb6iww",
-  authDomain: "base-de-datos-maestra-5a5a7.firebaseapp.com",
-  projectId: "base-de-datos-maestra-5a5a7",
-  storageBucket: "base-de-datos-maestra-5a5a7.firebasestorage.app",
-  messagingSenderId: "998538522792",
-  appId: "1:998538522792:web:b80a0239fcc749282b929d",
-  measurementId: "G-TTVVXRQR37"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-// 2. EL FILTRO MAESTRO: ID único que diferencia esta web de las demás
-const CONFIG_DOCUMENT_ID = "Dov8ARmYu9dtt4sOrZq6";
+// Pega aquí el ID de la plataforma que vas a probar (por ejemplo, el ID de EP web)
+const PLATFORMA_ID = "COLOCA_AQUI_EL_ID_DE_TU_PLATAFORMA"; 
 
 export default function App() {
-  const [appearance, setAppearance] = useState(null);
+  const [platform, setPlatform] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Escucha únicamente el documento asignado a este proyecto
-    const docRef = doc(db, "plataformas", CONFIG_DOCUMENT_ID);
+    // Apuntamos al documento específico de esta plataforma en Firebase
+    const docRef = doc(db, 'projects', PLATFORMA_ID); 
+    
+    // Escuchamos en tiempo real. Si cambias algo en el panel, se actualiza aquí al instante
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
-        setAppearance(docSnap.data().appearance);
+        setPlatform(docSnap.data());
       }
       setLoading(false);
     });
+
     return () => unsubscribe();
   }, []);
 
   if (loading) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-slate-950 text-white">
-        <p className="animate-pulse text-xs">Cargando identidad visual...</p>
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white font-sans">
+        <p className="text-sm animate-pulse">Cargando sitio web...</p>
       </div>
     );
   }
 
-  const dynamicStyles = `
-    :root {
-      --child-bg: ${appearance?.bgColor || '#0f172a'};
-      --child-surface: ${appearance?.surfaceColor || '#1e293b'};
-      --child-primary: ${appearance?.primaryColor || '#3b82f6'};
-      --child-text: ${appearance?.textColor || '#ffffff'};
-    }
-    .custom-bg { background-color: var(--child-bg) !important; }
-    .custom-surface { background-color: var(--child-surface) !important; }
-    .custom-text { color: var(--child-text) !important; }
-    .custom-btn { background-color: var(--child-primary) !important; }
-  `;
+  if (!platform) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white font-sans">
+        <p className="text-sm">El sitio web solicitado no se encuentra disponible.</p>
+      </div>
+    );
+  }
+
+  // Extraemos la configuración guardada con valores por defecto por seguridad
+  const { appearance = {}, navigation = { links: [] }, blocks = [] } = platform;
+
+  // Estilos base de la página controlados desde el Panel Maestro
+  const mainStyle = {
+    backgroundColor: appearance.bgColor || '#0f172a',
+    color: appearance.textColor || '#ffffff'
+  };
 
   return (
-    <div className="min-h-screen custom-bg custom-text p-6 flex flex-col items-center justify-center">
-      <style>${dynamicStyles}</style>
-      <div className="custom-surface p-8 rounded-2xl max-w-md w-full text-center border border-white/5 shadow-2xl">
-        <h1 className="text-xl font-bold mb-2">Plataforma Sincronizada</h1>
-        <p className="text-xs opacity-70 mb-6">Controlada con el ID: ${CONFIG_DOCUMENT_ID}</p>
-        <button className="custom-btn w-full py-3 rounded-xl font-medium text-white shadow-lg">Estructura Base</button>
-      </div>
+    <div style={mainStyle} className="min-h-screen font-sans transition-colors duration-300">
+      
+      {/* 1. BARRA DE NAVEGACIÓN DINÁMICA */}
+      <nav 
+        style={{ backgroundColor: appearance.surfaceColor || '#1e293b' }} 
+        className="sticky top-0 z-50 border-b border-white/10 px-6 py-4 shadow-md"
+      >
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <span className="text-lg font-bold" style={{ color: appearance.textColor }}>
+            {platform.name}
+          </span>
+          <ul className="flex gap-6 text-sm font-medium">
+            {navigation.links && navigation.links.map((link, idx) => (
+              <li key={idx}>
+                <a href={link.url} className="hover:opacity-80 transition-opacity" style={{ color: appearance.textColor }}>
+                  {link.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </nav>
+
+      {/* 2. PROCESADOR DE BLOQUES DINÁMICOS */}
+      <main className="max-w-6xl mx-auto px-6 py-12 space-y-20">
+        {blocks && blocks.map((block, idx) => {
+          
+          // CASO A: BLOQUE TIPO HERO (PRESENTACIÓN PRINCIPAL)
+          if (block.type === 'hero') {
+            return (
+              <section key={idx} className="grid md:grid-cols-2 gap-8 items-center py-8">
+                <div className="space-y-4">
+                  <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight" style={{ color: appearance.textColor }}>
+                    {block.title}
+                  </h1>
+                  <p className="text-lg opacity-80">{block.subtitle}</p>
+                  {block.buttonText && (
+                    <button 
+                      style={{ backgroundColor: appearance.primaryColor || '#3b82f6', color: '#ffffff' }}
+                      className="px-6 py-3 rounded-xl font-semibold shadow-lg hover:brightness-110 transition-all text-sm"
+                    >
+                      {block.buttonText}
+                    </button>
+                  )}
+                </div>
+                {block.imageUrl && (
+                  <div className="rounded-2xl overflow-hidden shadow-2xl border border-white/10">
+                    <img src={block.imageUrl} alt={block.title} className="w-full h-auto object-cover max-h-[400px]" />
+                  </div>
+                )}
+              </section>
+            );
+          }
+
+          // CASO B: BLOQUE TIPO CARDS (SERVICIOS, PRODUCTOS O CATÁLOGOS)
+          if (block.type === 'cards') {
+            return (
+              <section key={idx} className="space-y-6">
+                <div className="text-center max-w-xl mx-auto space-y-2">
+                  <h2 className="text-2xl font-bold" style={{ color: appearance.textColor }}>{block.title}</h2>
+                  <p className="text-sm opacity-80">{block.subtitle}</p>
+                </div>
+                
+                <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
+                  {block.items && block.items.map((item, itemIdx) => (
+                    <div 
+                      key={itemIdx} 
+                      style={{ backgroundColor: appearance.surfaceColor || '#1e293b' }}
+                      className="rounded-2xl p-5 border border-white/5 shadow-xl flex flex-col justify-between space-y-4"
+                    >
+                      <div className="space-y-3">
+                        {item.imageUrl && (
+                          <div className="rounded-xl overflow-hidden h-48 bg-black/20">
+                            <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                        <h3 className="font-bold text-lg" style={{ color: appearance.textColor }}>{item.title}</h3>
+                        <p className="text-sm opacity-70 line-clamp-3">{item.description}</p>
+                      </div>
+                      
+                      {item.price && (
+                        <div className="pt-2 flex items-center justify-between">
+                          <span className="font-bold text-lg" style={{ color: appearance.primaryColor }}>{item.price}</span>
+                          {item.buttonText && (
+                            <button 
+                              style={{ backgroundColor: appearance.primaryColor || '#3b82f6', color: '#ffffff' }}
+                              className="px-3 py-1.5 rounded-lg text-xs font-semibold hover:brightness-110 transition-all"
+                            >
+                              {item.buttonText}
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            );
+          }
+
+          return null;
+        })}
+      </main>
     </div>
   );
 }
