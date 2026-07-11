@@ -11,15 +11,22 @@ export default function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Escucha en tiempo real la colección de tus plataformas
-    const docRef = doc(db, 'projects', PLATFORMA_ID); 
+    // CORREGIDO: Ahora apunta directamente a tu colección 'plataformas'
+    const docRef = doc(db, 'plataformas', PLATFORMA_ID); 
     
-    const unsubscribe = onSnapshot(docRef, (docSnap) => {
-      if (docSnap.exists()) {
-        setPlatform(docSnap.data());
+    // Escucha en tiempo real con manejo de errores incorporado
+    const unsubscribe = onSnapshot(docRef, 
+      (docSnap) => {
+        if (docSnap.exists()) {
+          setPlatform(docSnap.data());
+        }
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Error crítico de Firestore:", error);
+        setLoading(false); // Evita el bucle de carga infinito si las reglas bloquean el acceso
       }
-      setLoading(false);
-    });
+    );
 
     return () => unsubscribe();
   }, []);
